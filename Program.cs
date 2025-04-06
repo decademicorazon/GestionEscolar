@@ -1,6 +1,7 @@
 ﻿
 using System.Text.Json;
 using System;
+using System.Text.Json.Serialization;
 
 public class Program
 {
@@ -155,8 +156,12 @@ public class Program
             string opcion = Console.ReadLine();
             switch (opcion)
             {
-                case "1": sa.SortearAlumno(); break;
-                case "2": sg.SortearGrupo(); break;
+                case "1": sa.SortearAlumno();
+
+                    Console.ReadKey(); break;
+                case "2": sg.SortearGrupo();
+                    Console.ReadKey(); 
+                    break;
                 case "3": volver = true; break;
                 default: Console.WriteLine("Opción inválida."); Console.ReadKey(); break;
             }
@@ -175,9 +180,11 @@ public int dni { get; set; }
     public string nombre { get; set; }
     public string apellido { get; set; }
     public string correo { get; set; }
+    [JsonIgnore]
     public Grupo grupo { get; set; }
 
     public bool participo { get; set; } = false;
+    [JsonIgnore]
     public List<Asistencia> asistencias { get; set; } = new List<Asistencia>();
 
     public Alumno(int dni, string nombre, string apellido, string correo)
@@ -201,7 +208,12 @@ public int dni { get; set; }
 
 public class ServiceAlumno
 {
-    public List<Alumno> alumnos = new List<Alumno>();
+    public List<Alumno> alumnos;
+    private string archivo = "alumnos.json";
+    public ServiceAlumno()
+    {
+        alumnos = JsonArchivos.CargarDeJson<Alumno>(archivo);
+    }
 
     public void AgregarAlumno()
     {
@@ -221,18 +233,12 @@ public class ServiceAlumno
         Alumno alumno = new Alumno(dni, nombre, apellido, correo);
 
         alumnos.Add(alumno);
-        Console.WriteLine("Alumno agregado");
-        string json = JsonSerializer.Serialize(alumno);
-        File.WriteAllText("alumnos.json", json);
-        Console.WriteLine("Datos guardados con éxito.");
-    }
-    public void GuardarCambios()
-    {
-        string json = JsonSerializer.Serialize(alumnos, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText("alumnos.json", json);
-        Console.WriteLine("Datos guardados con éxito.");
-    }
+        JsonArchivos.GuardarEnJson(alumnos, archivo);
+        Console.WriteLine("Alumno agregado con éxito.");
 
+
+    }
+    
 
     public Alumno? BuscarAlumno(int dni)
     {
@@ -243,38 +249,37 @@ public class ServiceAlumno
 
     public void SortearAlumno()
     {
-        var fechaHoy = DateTime.Now;
-        var presentesHoy = alumnos.Where(x => x.asistencias.Any(a => a.fecha.Date == fechaHoy.Date && a.estado == true)).ToList();
-        if (presentesHoy.Count == 0)
+        bool continuar = true;
+        while (continuar)
         {
-            Console.WriteLine("No hay alumnos presentes hoy");
-            return;
-        }
-        var disponibles = presentesHoy.Where(x => x.participo == false).ToList();
-        if (disponibles.Count == 0)
-        {
-            Console.WriteLine("No hay alumnos disponibles para sortear");
-            foreach (var alumno in alumnos)
-            {
-                alumno.participo = false;
-            }
-            disponibles = presentesHoy;
-        }
 
-        Random random = new Random();
-        var elegido = disponibles[random.Next(disponibles.Count)];
-        elegido.participo = true;
-        Console.WriteLine($"El alumno elegido es: {elegido.nombre} {elegido.apellido}");
-        Console.WriteLine("¿Desea volver a sortear? (1. Si / 2. No)");
-        int opcion = Convert.ToInt32(Console.ReadLine());
-        if (opcion == 1)
-        {
-            
-            SortearAlumno();
-        }
-        else
-        {
-            Console.WriteLine("Fin del sorteo");
+
+            var fechaHoy = DateTime.Now;
+            var presentesHoy = alumnos.Where(x => x.asistencias.Any(a => a.fecha.Date == fechaHoy.Date && a.estado == true)).ToList();
+            if (presentesHoy.Count == 0)
+            {
+                Console.WriteLine("No hay alumnos presentes hoy");
+                return;
+            }
+            var disponibles = presentesHoy.Where(x => x.participo == false).ToList();
+            if (disponibles.Count == 0)
+            {
+                Console.WriteLine("No hay alumnos disponibles para sortear");
+                foreach (var alumno in alumnos)
+                {
+                    alumno.participo = false;
+                }
+                disponibles = presentesHoy;
+            }
+
+            Random random = new Random();
+            var elegido = disponibles[random.Next(disponibles.Count)];
+            elegido.participo = true;
+            Console.WriteLine($"El alumno elegido es: {elegido.nombre} {elegido.apellido}");
+            JsonArchivos.GuardarEnJson(alumnos, archivo);
+            Console.WriteLine("¿Desea volver a sortear? (1. Si / 2. No)");
+            int opcion = Convert.ToInt32(Console.ReadLine());
+            continuar = opcion == 1;
         }
 
     }
@@ -313,6 +318,7 @@ public class ServiceAlumno
             return;
         }
         alumnos.Remove(alumno);
+        JsonArchivos.GuardarEnJson(alumnos, archivo);
         Console.WriteLine("Alumno eliminado");
     }
 
@@ -330,13 +336,24 @@ public class ServiceAlumno
                     Console.WriteLine("Ingrese el DNI del alumno a modificar");
                     int dni = Convert.ToInt32(Console.ReadLine());
                     var alumnoAmodificar = alumnos.FirstOrDefault(x => x.dni == dni);
+                    if (alumnoAmodificar == null)
+                    {
+                        Console.WriteLine("El alumno no existe");
+                        return;
+                    }
                     ModificarAlumnoPidiendoDatos(alumnoAmodificar);
                     break;
                 case 2:
                     Console.WriteLine("Ingrese el apellido del alumno a modificar");
                     string apellido = Console.ReadLine();
                     var alumnoAmodificarApellido = alumnos.FirstOrDefault(x => x.apellido == apellido);
+                    if(alumnoAmodificarApellido == null)
+                    {
+                        Console.WriteLine("El alumno no existe");
+                        return;
+                    }
                     ModificarAlumnoPidiendoDatos(alumnoAmodificarApellido);
+
                     break;
                 case 3:return;
                 default:
@@ -366,21 +383,25 @@ public class ServiceAlumno
                     Console.WriteLine("Ingrese el nuevo DNI");
                     int dni = Convert.ToInt32(Console.ReadLine());
                     alumno.dni = dni;
+                    JsonArchivos.GuardarEnJson(alumnos, archivo);
                     break;
                 case 2:
                     Console.WriteLine("Ingrese el nuevo Nombre");
                     string nombre = Console.ReadLine();
                     alumno.nombre = nombre;
+                    JsonArchivos.GuardarEnJson(alumnos, archivo);
                     break;
                 case 3:
                     Console.WriteLine("Ingrese el nuevo Apellido");
                     string apellido = Console.ReadLine();
                     alumno.apellido = apellido;
+                    JsonArchivos.GuardarEnJson(alumnos, archivo);
                     break;
                 case 4:
                     Console.WriteLine("Ingrese el nuevo Correo");
                     string correo = Console.ReadLine();
                     alumno.correo = correo;
+                    JsonArchivos.GuardarEnJson(alumnos, archivo);
                     break;
                 case 5:
                     Console.WriteLine("Ingrese el nuevo DNI");
@@ -404,6 +425,7 @@ public class ServiceAlumno
                         alumno.nombre = nombre5;
                         alumno.apellido = apellido5;
                         alumno.correo = correo5;
+                        JsonArchivos.GuardarEnJson(alumnos, archivo);
                     }
 
                     break;
@@ -422,14 +444,18 @@ public class Grupo
 {
     public int codigo { get; set; }
     public bool participo { get; set; } = false;
-    public List<Alumno> alumnos 
+    [JsonIgnore]
+    public List<Alumno> alumnos
+
+
     {
         get; set;
     }
     public Grupo (int codigo)
     {
         this.codigo = codigo;
-        this.alumnos = new List<Alumno>();
+        alumnos = new List<Alumno>();
+
 
     }
 
@@ -462,11 +488,13 @@ public class Grupo
 
 public class ServiceGrupo
 {
-    private List<Grupo> grupos = new List<Grupo>();
+    private List<Grupo> grupos;
+    private string archivo = "grupos.json";
     public ServiceAlumno _sa;
     public ServiceGrupo(ServiceAlumno sa)
     {
         _sa = sa;
+        grupos = JsonArchivos.CargarDeJson<Grupo>(archivo);
     }
 
     public Grupo? BuscarGrupo(int codigo)
@@ -486,6 +514,7 @@ public class ServiceGrupo
         }
         Grupo nuevoGrupo = new Grupo(codigo);
         grupos.Add(nuevoGrupo);
+        JsonArchivos.GuardarEnJson(grupos, archivo);
         Console.WriteLine($"Grupo creado con el codigo {codigo}");
 
         while (nuevoGrupo.alumnos.Count <= 6)
@@ -513,13 +542,14 @@ public class ServiceGrupo
                     int cambiar = Convert.ToInt32(Console.ReadLine());
                     if (cambiar != 1) continue;
                     alumno.grupo.EliminarAlumno(alumno);
-                
+                    JsonArchivos.GuardarEnJson(grupos, archivo);
+
 
                 }
                 nuevoGrupo.AgregarAlumno(alumno);
                 alumno.grupo = nuevoGrupo;
                 Console.WriteLine($"{alumno.nombre} agregado al grupo {nuevoGrupo.codigo}");
-
+                JsonArchivos.GuardarEnJson(grupos, archivo);
 
             }
             else
@@ -528,6 +558,7 @@ public class ServiceGrupo
             }
 
         }
+        JsonArchivos.GuardarEnJson(grupos, archivo);
     }
 
 
@@ -573,6 +604,7 @@ public class ServiceGrupo
                 grupo.AgregarAlumno(alumno);
                 alumno.grupo = grupo;
                 Console.WriteLine($"{alumno.nombre} agregado al grupo {grupo.codigo}");
+                JsonArchivos.GuardarEnJson(grupos, archivo);
 
             }
 
@@ -589,7 +621,9 @@ public class ServiceGrupo
                 grupo.EliminarAlumno(alumno);
                 alumno.grupo = null;
                 Console.WriteLine("Alumno eliminado del grupo");
-            }else
+                JsonArchivos.GuardarEnJson(grupos, archivo);
+            }
+            else
             {
                 return;
             }
@@ -632,12 +666,18 @@ public class ServiceGrupo
             grupo.AgregarAlumno(alumno);
             alumno.grupo = grupo;
             Console.WriteLine($"{alumno.nombre} movido a {codigo}.");
+            JsonArchivos.GuardarEnJson(grupos, archivo);
         }
     }
 
 
     public void SortearGrupo()
     {
+        if(grupos.Count == 0)
+        {
+            Console.WriteLine("No hay grupos registrados");
+            return;
+        }
         
         var disponibles = grupos.Where(g=>!g.participo).ToList();
         if (disponibles.Count == 0)
@@ -647,13 +687,14 @@ public class ServiceGrupo
             {
                 grupo.participo = false;
             }
-            disponibles = grupos;
+            disponibles = grupos.ToList();
         }
 
         Random random = new Random();
         var elegido = disponibles[random.Next(disponibles.Count)];
         elegido.participo = true;
         Console.WriteLine($"El grupo elegido es: {elegido.codigo}");
+        JsonArchivos.GuardarEnJson(grupos, archivo);
 
 
 
@@ -672,6 +713,7 @@ public class ServiceGrupo
             alumno.grupo = null;
         }
         grupos.Remove(grupo);
+        JsonArchivos.GuardarEnJson(grupos, archivo);
         Console.WriteLine($"Grupo {codigo} eliminado.");
     }
 
@@ -746,6 +788,7 @@ public class ServiceAsistencia
             bool estado = respuesta == "P";
             alumno.AgregarAsistencia(estado);
         }
+        JsonArchivos.GuardarEnJson(_serviceAlumno.MostrarAlumnos(), "alumnos.json");
         Console.WriteLine("Asistencia registrada correctamente.");
     }
 
@@ -814,5 +857,32 @@ public class ServiceAsistencia
                 }
             }
         }
+    }
+}
+
+
+public static class JsonArchivos
+{
+    public static void GuardarEnJson<T>(List<T> lista, string archivo)
+    {
+        var opciones = new JsonSerializerOptions { WriteIndented = true };
+        string json = JsonSerializer.Serialize(lista, opciones);
+        File.WriteAllText(archivo, json);
+    }
+
+    public static List<T> CargarDeJson<T>(string archivo)
+    {
+        if (!File.Exists(archivo)) return new List<T>();
+        string json = File.ReadAllText(archivo);
+        try
+        {
+            return JsonSerializer.Deserialize<List<T>>(json);
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Error al deserializar el archivo JSON: {ex.Message}");
+            return new List<T>();
+        }
+      
     }
 }
