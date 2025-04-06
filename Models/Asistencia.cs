@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Programacion_3
+namespace Programacion_3.Models
 {
     public class Asistencia
     {
