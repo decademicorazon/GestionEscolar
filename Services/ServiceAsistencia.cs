@@ -26,8 +26,9 @@ namespace Programacion_3.Services
                 string respuesta = Console.ReadLine().ToUpper();
                 bool estado = respuesta == "P";
                 alumno.AgregarAsistencia(estado);
+                _serviceAlumno.GuardarCambios();
             }
-            JsonArchivos.GuardarEnJson(_serviceAlumno.MostrarAlumnos(), "alumnos.json");
+
             Console.WriteLine("Asistencia registrada correctamente.");
         }
 

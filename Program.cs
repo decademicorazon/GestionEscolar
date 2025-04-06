@@ -13,6 +13,19 @@ public class Program
         ServiceGrupo serviceGrupo = new ServiceGrupo(serviceAlumno);
         ServiceAsistencia serviceAsistencia = new ServiceAsistencia(serviceAlumno);
 
+        foreach (var alumno in serviceAlumno.MostrarAlumnos())
+        {
+            if (alumno.CodigoGrupo.HasValue)
+            {
+                var grupo = serviceGrupo.BuscarGrupo(alumno.CodigoGrupo.Value);
+                if (grupo != null)
+                {
+                    alumno.grupo = grupo;
+                    grupo.AgregarAlumno(alumno);
+                }
+            }
+        }
+
         bool salir = false;
 
         while (!salir)
@@ -23,9 +36,8 @@ public class Program
             Console.WriteLine("2. Gestión de Grupos");
             Console.WriteLine("3. Asistencias");
             Console.WriteLine("4. Sorteos");
-            Console.WriteLine("5. Guardar Cambios");
-            Console.WriteLine("6. Salir");
-            Console.Write("Seleccione una opción: ");
+            Console.WriteLine("5. Salir");
+            Console.Write("Seleccione una opcion: ");
 
             string opcion = Console.ReadLine();
 
@@ -43,14 +55,8 @@ public class Program
                 case "4":
                     SubMenuSorteos(serviceAlumno, serviceGrupo);
                     break;
+               
                 case "5":
-                  /*  serviceAlumno.GuardarCambios();
-                    serviceGrupo.GuardarCambios();
-                    serviceAsistencia.GuardarCambios();
-                    Console.WriteLine("Datos guardados con éxito.");
-                  */  Console.ReadKey();
-                    break;
-                case "6":
                     salir = true;
                     break;
                 default:
@@ -80,8 +86,8 @@ public class Program
             {
                 case "1": sa.AgregarAlumno();Console.ReadKey(); break;
                 case "2": sa.MostrarAlumnosMenu(); Console.ReadKey(); break;
-                case "3": sa.ModificarAlumno(); break;
-                case "4": sa.EliminarAlumno(); break;
+                case "3": sa.ModificarAlumno();Console.ReadKey(); break;
+                case "4": sa.EliminarAlumno(); Console.ReadKey(); break;
                 case "5": volver = true; break;
                 default: Console.WriteLine("Opción inválida."); Console.ReadKey(); break;
             }
@@ -100,7 +106,8 @@ public class Program
             Console.WriteLine("3. Eliminar Grupo");
             Console.WriteLine("4. Modificar Grupo");
             Console.WriteLine("5. Mover Alumnos");
-            Console.WriteLine("6. Volver");
+            Console.WriteLine("6. Mostrar estudiantes sin grupo");
+            Console.WriteLine("7. Volver");
             Console.Write("Seleccione una opción: ");
 
             string opcion = Console.ReadLine();
@@ -114,7 +121,8 @@ public class Program
                     sg.EliminarGrupo(codigo); break;
                 case "4": sg.ModificarGrupo(); break;
                 case "5": sg.MoverAlumno(); break;
-                case "6": volver = true; break;
+                    case "6": sg.MostrarEstudiantesSinGrupo();Console.ReadKey(); break;
+                case "7": volver = true; break;
                 default: Console.WriteLine("Opción invalida."); Console.ReadKey(); break;
             }
         }
@@ -129,7 +137,8 @@ public class Program
             Console.WriteLine(" REGISTRO DE ASISTENCIAS ");
             Console.WriteLine("1. Tomar Asistencia");
             Console.WriteLine("2. Mostrar Asistencias");
-            Console.WriteLine("3. Volver");
+            Console.WriteLine("3. Mostrar Resumen de Asistencias Individual");
+            Console.WriteLine("4. Volver");
             Console.Write("Seleccione una opción: ");
 
             string opcion = Console.ReadLine();
@@ -137,7 +146,8 @@ public class Program
             {
                 case "1": sa.RegistrarAsistencia(); break;
                 case "2": sa.MostrarAsistencias(); Console.ReadKey(); break;
-                case "3": volver = true; break;
+                case "3": sa.MostrarResumenIndividual(); Console.ReadKey(); break;
+                case "4": volver = true; break;
                 default: Console.WriteLine("Opción inválida."); Console.ReadKey(); break;
             }
         }

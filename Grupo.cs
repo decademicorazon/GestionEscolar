@@ -46,7 +46,8 @@ namespace Programacion_3
                 {
                     alumnos.Remove(alumno);
                     alumno.grupo = null;
-                    Console.WriteLine($"{alumno.nombre} ha sido eliminado del grupo {codigo}.");
+                alumno.CodigoGrupo = null;
+                Console.WriteLine($"{alumno.nombre} ha sido eliminado del grupo {codigo}.");
                 }
                 else
                 {

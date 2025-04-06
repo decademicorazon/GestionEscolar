@@ -65,13 +65,16 @@ namespace Programacion_3.Services
                         if (cambiar != 1) continue;
                         alumno.grupo.EliminarAlumno(alumno);
                         JsonArchivos.GuardarEnJson(grupos, archivo);
+                        _sa.GuardarCambios();
 
 
                     }
                     nuevoGrupo.AgregarAlumno(alumno);
                     alumno.grupo = nuevoGrupo;
+                    alumno.CodigoGrupo = nuevoGrupo.codigo;
                     Console.WriteLine($"{alumno.nombre} agregado al grupo {nuevoGrupo.codigo}");
                     JsonArchivos.GuardarEnJson(grupos, archivo);
+                    _sa.GuardarCambios();
 
                 }
                 else
@@ -81,6 +84,7 @@ namespace Programacion_3.Services
 
             }
             JsonArchivos.GuardarEnJson(grupos, archivo);
+            _sa.GuardarCambios();
         }
 
 
@@ -126,8 +130,10 @@ namespace Programacion_3.Services
                     }
                     grupo.AgregarAlumno(alumno);
                     alumno.grupo = grupo;
+                    alumno.CodigoGrupo = grupo.codigo;
                     Console.WriteLine($"{alumno.nombre} agregado al grupo {grupo.codigo}");
                     JsonArchivos.GuardarEnJson(grupos, archivo);
+                    _sa.GuardarCambios();
 
                 }
 
@@ -146,6 +152,7 @@ namespace Programacion_3.Services
                     alumno.grupo = null;
                     Console.WriteLine("Alumno eliminado del grupo");
                     JsonArchivos.GuardarEnJson(grupos, archivo);
+                    _sa.GuardarCambios();
                 }
                 else
                 {
@@ -189,8 +196,10 @@ namespace Programacion_3.Services
                 alumno.grupo.EliminarAlumno(alumno);
                 grupo.AgregarAlumno(alumno);
                 alumno.grupo = grupo;
+                alumno.CodigoGrupo = grupo.codigo;
                 Console.WriteLine($"{alumno.nombre} movido a {codigo}.");
                 JsonArchivos.GuardarEnJson(grupos, archivo);
+                _sa.GuardarCambios();
             }
         }
 
@@ -207,11 +216,21 @@ namespace Programacion_3.Services
             if (disponibles.Count == 0)
             {
                 Console.WriteLine("No hay grupos disponibles para sortear");
-                foreach (var grupo in grupos)
+                Console.WriteLine("Todos los grupos ya participaron. Desea reiniciarlos?");
+                Console.WriteLine("1. Si");
+                Console.WriteLine("2. No");
+                int respuesta = Convert.ToInt32(Console.ReadLine());
+                if (respuesta == 1)
                 {
-                    grupo.participo = false;
+                    foreach (var grupo in grupos)
+                    {
+                        grupo.participo = false;
+                    }
+                    disponibles = grupos.ToList();
                 }
-                disponibles = grupos.ToList();
+                else
+                    Console.WriteLine("Sorteo finalizado");
+                    return;
             }
 
             Random random = new Random();
@@ -219,6 +238,7 @@ namespace Programacion_3.Services
             elegido.participo = true;
             Console.WriteLine($"El grupo elegido es: {elegido.codigo}");
             JsonArchivos.GuardarEnJson(grupos, archivo);
+            _sa.GuardarCambios();
 
 
 
@@ -235,6 +255,7 @@ namespace Programacion_3.Services
             foreach (var alumno in grupo.alumnos)
             {
                 alumno.grupo = null;
+                alumno.CodigoGrupo = null;
             }
             grupos.Remove(grupo);
             JsonArchivos.GuardarEnJson(grupos, archivo);

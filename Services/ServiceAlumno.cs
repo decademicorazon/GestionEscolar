@@ -14,6 +14,9 @@ namespace Programacion_3.Services
         public ServiceAlumno()
         {
             alumnos = JsonArchivos.CargarDeJson<Alumno>(archivo);
+
+            // 🔁 Reconectar los grupos
+           
         }
 
         public void AgregarAlumno()
@@ -65,22 +68,35 @@ namespace Programacion_3.Services
                 var disponibles = presentesHoy.Where(x => x.participo == false).ToList();
                 if (disponibles.Count == 0)
                 {
-                    Console.WriteLine("No hay alumnos disponibles para sortear");
-                    foreach (var alumno in alumnos)
+                    Console.WriteLine("Todos los alumnos presentes ya han sido sorteados.");
+                    Console.WriteLine("¿Desea reiniciar el ciclo de participacion? (1. Si / 2. No)");
+                    int respuesta = Convert.ToInt32(Console.ReadLine());
+
+                    if (respuesta == 1)
                     {
-                        alumno.participo = false;
+                        foreach (var alumno in presentesHoy)
+                        {
+                            alumno.participo = false;
+                        }
+                        disponibles = presentesHoy;
                     }
-                    disponibles = presentesHoy;
+                    else
+                    {
+                        Console.WriteLine("Sorteo finalizado.");
+                        return;
+                    }
                 }
 
                 Random random = new Random();
                 var elegido = disponibles[random.Next(disponibles.Count)];
                 elegido.participo = true;
+                GuardarCambios();
                 Console.WriteLine($"El alumno elegido es: {elegido.nombre} {elegido.apellido}");
-                JsonArchivos.GuardarEnJson(alumnos, archivo);
+                
                 Console.WriteLine("¿Desea volver a sortear? (1. Si / 2. No)");
                 int opcion = Convert.ToInt32(Console.ReadLine());
                 continuar = opcion == 1;
+                
             }
 
         }
@@ -106,21 +122,50 @@ namespace Programacion_3.Services
                 }
             }
         }
-
+        public void GuardarCambios()
+        {
+            JsonArchivos.GuardarEnJson(alumnos, archivo);
+        }
         public void EliminarAlumno()
         {
+            Console.WriteLine("1. Eliminar por DNI");
+            Console.WriteLine("2. Eliminar por Apellido");
+            Console.WriteLine("3. Salir");
+            int opcion = Convert.ToInt32(Console.ReadLine());
 
-            Console.WriteLine("Ingrese el DNI del alumno a eliminar");
-            int dni = Convert.ToInt32(Console.ReadLine());
-            var alumno = BuscarAlumno(dni);
-            if (alumno == null)
+            if (opcion == 1)
             {
-                Console.WriteLine("El alumno no existe");
+                Console.WriteLine("Ingrese el DNI del alumno a eliminar");
+                int dni = Convert.ToInt32(Console.ReadLine());
+                var alumno = BuscarAlumno(dni);
+                if (alumno == null)
+                {
+                    Console.WriteLine("El alumno no existe");
+                    return;
+                }
+                alumnos.Remove(alumno);
+                JsonArchivos.GuardarEnJson(alumnos, archivo);
+                Console.WriteLine("Alumno eliminado");
+            }
+            else if (opcion == 2)
+            {
+                Console.WriteLine("Ingrese el apellido del alumno a eliminar");
+                string apellido = Console.ReadLine();
+                var alumno = alumnos.FirstOrDefault(x => x.apellido == apellido);
+                if (alumno == null)
+                {
+                    Console.WriteLine("El alumno no existe");
+                    return;
+                }
+                alumnos.Remove(alumno);
+                JsonArchivos.GuardarEnJson(alumnos, archivo);
+                Console.WriteLine("Alumno eliminado");
+            }
+            else if (opcion == 3)
+            {
                 return;
             }
-            alumnos.Remove(alumno);
-            JsonArchivos.GuardarEnJson(alumnos, archivo);
-            Console.WriteLine("Alumno eliminado");
+            Console.Clear();
         }
 
         public void ModificarAlumno()

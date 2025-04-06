@@ -14,11 +14,13 @@ namespace Programacion_3
             public string nombre { get; set; }
             public string apellido { get; set; }
             public string correo { get; set; }
-            [JsonIgnore]
+
+            public int? CodigoGrupo { get; set; } 
+        [JsonIgnore]
             public Grupo grupo { get; set; }
 
             public bool participo { get; set; } = false;
-            [JsonIgnore]
+            
             public List<Asistencia> asistencias { get; set; } = new List<Asistencia>();
 
             public Alumno(int dni, string nombre, string apellido, string correo)
